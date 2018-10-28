@@ -6,6 +6,8 @@ from PIL import ImageFont
 from PIL import ImageDraw 
 import csv
 import os
+import multiprocessing as mp
+import signal
 
 
 # CSV-muotoisen plassin tiedostonimi
@@ -26,6 +28,7 @@ plassi = list(csv.reader(open(plassi_filename)))
 print(len(plassi))
 print(len(plassi[0]))
 
+img_lock = mp.Lock()
 img = Image.open(tausta_filename)
 imgW, imgH = img.size
 fonts=[]
@@ -38,7 +41,11 @@ def create_card(name):
 
 	print(name)
 
+	# Concurrent copying seems to be broken :(
+	img_lock.acquire()
 	imgCpy = img.copy()
+	img_lock.release()
+
 	draw = ImageDraw.Draw(imgCpy)
 	fontId = 0
 	w, h = draw.textsize(name,font=fonts[fontId][0])
@@ -54,7 +61,15 @@ def create_card(name):
 if (os.path.isdir(output_dir) == False):
     os.makedirs(output_dir)
 
-for row in plassi:
-	for name in row:
-		create_card(name)
+original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+pool = mp.Pool()
+signal.signal(signal.SIGINT, original_sigint_handler)
 
+try:
+	for row in plassi:
+		pool.map(create_card, row)
+except KeyboardInterrupt:
+	pool.terminate()
+else:
+	pool.close()
+pool.join()
