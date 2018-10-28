@@ -7,6 +7,7 @@ from PIL import ImageDraw
 import csv
 import operator
 from collections import defaultdict
+import os
 
 
 # CSV-muotoisen plassin tiedostonimi
@@ -17,6 +18,9 @@ tausta_filename = "plassi_tausta.png"
 fontti_filename = "Chelsea III.ttf"
 # Fontin väri (0-255 RGB)
 font_color = (255,255,255)
+# Valmiin plassin hakemisto
+output_dir = "plassi"
+
 
 tables = [
 	("DI Henry Sanmark", 4, 7, 1, 24),
@@ -79,7 +83,10 @@ for name in names:
 		lineX += 960
 		lineY = 400
 
-img.save("plassi/plassi.png")
+if (os.path.isdir(output_dir) == False):
+    os.makedirs(output_dir)
+
+img.save(output_dir + "/plassi.png")
 
 # for row in plassi:
 # 	for name in row:
